@@ -1,0 +1,11 @@
+.env
+backend/.env
+frontend/.env
+backend/node_modules
+frontend/node_modules
+backend/coverage
+frontend/dist
+.agents/
+skills-lock.json
+.DS_Store
+*.log
