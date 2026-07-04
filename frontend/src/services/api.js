@@ -28,7 +28,7 @@ const redirectToLogin = () => {
 };
 
 export const requestTokenRefresh = async () => {
-  const response = await refreshClient.post('/auth/refresh');
+  const response = await refreshClient.post('/api/v1/auth/refresh');
   return response.data?.data;
 };
 
@@ -38,6 +38,8 @@ api.interceptors.request.use((config) => {
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
+
+  config.headers['X-Request-ID'] = crypto.randomUUID();
 
   return config;
 });
@@ -51,7 +53,7 @@ api.interceptors.response.use(
       error.response?.status !== 401 ||
       !originalRequest ||
       originalRequest._retry ||
-      originalRequest.url === '/auth/refresh'
+      originalRequest.url === '/api/v1/auth/refresh'
     ) {
       return Promise.reject(error);
     }

@@ -11,6 +11,7 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.5.1",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -18,12 +19,13 @@
     "helmet": "^8.0.0",
     "ioredis": "^5.4.1",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^2.0.2",
     "mongoose": "^8.9.5",
+    "multer": "^2.0.2",
     "qrcode": "^1.5.4",
     "razorpay": "^2.9.5",
     "socket.io": "^4.8.1",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "ioredis-mock": "^8.9.0",

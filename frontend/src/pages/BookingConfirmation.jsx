@@ -114,7 +114,7 @@ export default function BookingConfirmation() {
 
     const loadBooking = async () => {
       try {
-        const { data } = await api.get(`/booking/${bookingId}`);
+        const { data } = await api.get(`/api/v1/bookings/${bookingId}`);
         const nextBooking = data?.data?.booking || null;
 
         if (isMounted) {

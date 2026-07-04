@@ -2,6 +2,8 @@ import { Router } from 'express';
 import multer from 'multer';
 import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
+import { validateBody, validateQuery } from '../../middleware/validate.js';
+import { createEventSchema, updateEventSchema, listEventsQuerySchema } from '../../schemas/events.schema.js';
 import { eventsController } from './events.controller.js';
 import { MAX_COVER_IMAGE_BYTES } from './events.service.js';
 
@@ -13,7 +15,7 @@ const coverUpload = multer({
   }
 });
 
-router.post('/', authenticate, authorize('organizer'), eventsController.createEventHandler);
+router.post('/', authenticate, authorize('organizer'), validateBody(createEventSchema), eventsController.createEventHandler);
 router.get(
   '/organizer/mine',
   authenticate,
@@ -27,12 +29,13 @@ router.post(
   coverUpload.single('coverImage'),
   eventsController.uploadCoverImageHandler
 );
-router.get('/', eventsController.listEventsHandler);
+router.get('/', validateQuery(listEventsQuerySchema), eventsController.listEventsHandler);
 router.get('/:id', eventsController.getEventHandler);
 router.patch(
   '/:id',
   authenticate,
   authorize('organizer', 'admin'),
+  validateBody(updateEventSchema),
   eventsController.updateEventHandler
 );
 router.delete('/:id', authenticate, authorize('admin'), eventsController.deleteEventHandler);

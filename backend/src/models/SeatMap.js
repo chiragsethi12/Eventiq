@@ -23,7 +23,8 @@ const seatMapSchema = new Schema({
     type: [String],
     default: []
   }
-});
+},
+{ timestamps: true });
 
 export const SeatMap = models.SeatMap || model('SeatMap', seatMapSchema);
 

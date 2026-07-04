@@ -62,6 +62,8 @@ const bookingSchema = new Schema(
 bookingSchema.index({ userId: 1, eventId: 1 });
 bookingSchema.index({ userId: 1, paymentStatus: 1, createdAt: -1 });
 bookingSchema.index({ userId: 1, eventId: 1, paymentStatus: 1, createdAt: -1 });
+bookingSchema.index({ eventId: 1, paymentStatus: 1 });
+bookingSchema.index({ userId: 1, createdAt: -1 });
 
 export const Booking = models.Booking || model('Booking', bookingSchema);
 

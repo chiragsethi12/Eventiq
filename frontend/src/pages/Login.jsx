@@ -41,7 +41,7 @@ export default function Login() {
     dispatch(setError(null));
 
     try {
-      const response = await api.post('/auth/login', values);
+      const response = await api.post('/api/v1/auth/login', values);
       const authData = response.data?.data;
 
       dispatch(

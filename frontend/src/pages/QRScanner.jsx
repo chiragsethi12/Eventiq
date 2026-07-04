@@ -38,7 +38,7 @@ export default function QRScanner() {
         await scanner.pause(true);
         const normalizedQrPayload = normalizeScannedQrPayload(decodedText);
 
-        const { data } = await api.post('/tickets/validate', {
+        const { data } = await api.post('/api/v1/tickets/validate', {
           qrPayload: normalizedQrPayload
         });
 

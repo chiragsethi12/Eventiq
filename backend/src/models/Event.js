@@ -101,6 +101,8 @@ eventSchema.index({ status: 1, category: 1, date: 1, _id: 1 });
 eventSchema.index({ status: 1, 'venue.city': 1, date: 1, _id: 1 });
 eventSchema.index({ organizerId: 1, date: 1 });
 eventSchema.index({ organizerId: 1, status: 1 });
+eventSchema.index({ organizerId: 1, date: -1 });
+eventSchema.index({ date: 1, status: 1 });
 
 export const Event = models.Event || model('Event', eventSchema);
 

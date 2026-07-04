@@ -34,7 +34,7 @@ export default function Register() {
     dispatch(setError(null));
 
     try {
-      const response = await api.post('/auth/register', values);
+      const response = await api.post('/api/v1/auth/register', values);
       const authData = response.data?.data;
 
       dispatch(

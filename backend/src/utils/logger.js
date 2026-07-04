@@ -6,6 +6,7 @@ const productionFields = winston.format((info) => {
   const normalized = {
     timestamp: info.timestamp,
     level: info.level,
+    correlationId: info.correlationId,
     requestId: info.requestId,
     userId: info.userId,
     module: info.module,
@@ -35,7 +36,8 @@ const developmentFormat = combine(
   printf((info) => {
     const context = [
       info.module && `module=${info.module}`,
-      info.requestId && `requestId=${info.requestId}`,
+      info.correlationId && `correlationId=${info.correlationId}`,
+      info.requestId && !info.correlationId && `requestId=${info.requestId}`,
       info.userId && `userId=${info.userId}`
     ].filter(Boolean);
 

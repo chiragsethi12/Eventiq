@@ -69,7 +69,7 @@ const extractCookieValue = (cookies, cookieName) => {
 
 const loginUser = async ({ email, password }) => {
   const agent = request.agent(httpServer);
-  const response = await agent.post('/auth/login').send({ email, password });
+  const response = await agent.post('/api/v1/auth/login').send({ email, password });
 
   return {
     agent,
@@ -141,7 +141,7 @@ const createPendingBookingContext = async ({ seatCount = 1 } = {}) => {
   );
 
   const initiateResponse = await request(httpServer)
-    .post('/booking/initiate')
+    .post('/api/v1/bookings/initiate')
     .set('Authorization', `Bearer ${attendeeSession.accessToken}`)
     .send({
       eventId: event._id.toString(),
@@ -209,7 +209,7 @@ const buildWebhookRequest = ({ orderId, paymentId = `pay_${Date.now()}`, event =
 
 const postWebhook = async ({ body, signature }) =>
   request(httpServer)
-    .post('/payments/webhook')
+    .post('/api/v1/payments/webhook')
     .set('Content-Type', 'application/json')
     .set('X-Signature', signature)
     .send(body);
@@ -386,7 +386,7 @@ afterAll(async () => {
 
 describe('Eventiq integration coverage', () => {
   test('AUTH — register → login → get /users/me → logout → verify refresh token blacklisted', async () => {
-    const registration = await request(httpServer).post('/auth/register').send({
+    const registration = await request(httpServer).post('/api/v1/auth/register').send({
       name: 'Auth Flow User',
       email: 'auth-flow@example.com',
       password: DEFAULT_PASSWORD
@@ -399,13 +399,13 @@ describe('Eventiq integration coverage', () => {
       password: DEFAULT_PASSWORD
     });
     const meResponse = await request(httpServer)
-      .get('/users/me')
+      .get('/api/v1/users/me')
       .set('Authorization', `Bearer ${session.accessToken}`);
 
     expect(meResponse.status).toBe(200);
     expect(meResponse.body.data.user.email).toBe('auth-flow@example.com');
 
-    const logoutResponse = await session.agent.post('/auth/logout');
+    const logoutResponse = await session.agent.post('/api/v1/auth/logout');
 
     expect(logoutResponse.status).toBe(200);
 
@@ -424,7 +424,7 @@ describe('Eventiq integration coverage', () => {
     });
 
     for (let attempt = 1; attempt <= 10; attempt += 1) {
-      const response = await request(httpServer).post('/auth/login').send({
+      const response = await request(httpServer).post('/api/v1/auth/login').send({
         email: 'rate-limit@example.com',
         password: 'WrongPassword123!'
       });
@@ -432,7 +432,7 @@ describe('Eventiq integration coverage', () => {
       expect(response.status).toBe(401);
     }
 
-    const blockedResponse = await request(httpServer).post('/auth/login').send({
+    const blockedResponse = await request(httpServer).post('/api/v1/auth/login').send({
       email: 'rate-limit@example.com',
       password: 'WrongPassword123!'
     });
@@ -495,7 +495,7 @@ describe('Eventiq integration coverage', () => {
     const attendeeSession = await loginUser(attendeeAccount);
 
     const response = await request(httpServer)
-      .post('/booking/initiate')
+      .post('/api/v1/bookings/initiate')
       .set('Authorization', `Bearer ${attendeeSession.accessToken}`)
       .send({
         eventId: event._id.toString(),
@@ -575,7 +575,7 @@ describe('Eventiq integration coverage', () => {
     const ticket = await Ticket.findOne({ bookingId: context.booking._id }).lean();
 
     const response = await request(httpServer)
-      .post('/tickets/validate')
+      .post('/api/v1/tickets/validate')
       .set('Authorization', `Bearer ${organizerSession.accessToken}`)
       .send({
         qrPayload: ticket.qrPayload
@@ -601,14 +601,14 @@ describe('Eventiq integration coverage', () => {
     const ticket = await Ticket.findOne({ bookingId: context.booking._id }).lean();
 
     await request(httpServer)
-      .post('/tickets/validate')
+      .post('/api/v1/tickets/validate')
       .set('Authorization', `Bearer ${organizerSession.accessToken}`)
       .send({
         qrPayload: ticket.qrPayload
       });
 
     const secondResponse = await request(httpServer)
-      .post('/tickets/validate')
+      .post('/api/v1/tickets/validate')
       .set('Authorization', `Bearer ${organizerSession.accessToken}`)
       .send({
         qrPayload: ticket.qrPayload
@@ -633,7 +633,7 @@ describe('Eventiq integration coverage', () => {
     const tamperedPayload = `${ticket.qrPayload.slice(0, -1)}x`;
 
     const response = await request(httpServer)
-      .post('/tickets/validate')
+      .post('/api/v1/tickets/validate')
       .set('Authorization', `Bearer ${organizerSession.accessToken}`)
       .send({
         qrPayload: tamperedPayload
@@ -659,7 +659,7 @@ describe('Eventiq integration coverage', () => {
     const scannedPayload = ` ${bookingId} : ${userId} : ${eventId} : ${hmac.toUpperCase()} `;
 
     const response = await request(httpServer)
-      .post('/tickets/validate')
+      .post('/api/v1/tickets/validate')
       .set('Authorization', `Bearer ${organizerSession.accessToken}`)
       .send({
         qrPayload: scannedPayload
@@ -685,7 +685,7 @@ describe('Eventiq integration coverage', () => {
     const scannedPayload = `${bookingId}:\n${userId}: ${eventId}:\u200B${hmac}`;
 
     const response = await request(httpServer)
-      .post('/tickets/validate')
+      .post('/api/v1/tickets/validate')
       .set('Authorization', `Bearer ${organizerSession.accessToken}`)
       .send({
         qrPayload: scannedPayload
@@ -738,7 +738,7 @@ describe('Eventiq integration coverage', () => {
     await postWebhook(webhookRequest);
 
     const cancelResponse = await request(httpServer)
-      .post(`/events/${context.event._id.toString()}/cancel`)
+      .post(`/api/v1/events/${context.event._id.toString()}/cancel`)
       .set('Authorization', `Bearer ${organizerSession.accessToken}`);
 
     const booking = await Booking.findById(context.booking._id).lean();
@@ -754,7 +754,7 @@ describe('Eventiq integration coverage', () => {
     const adminSession = await loginUser(adminAccount);
 
     const response = await request(httpServer)
-      .patch(`/admin/users/${adminAccount.user._id.toString()}/role`)
+      .patch(`/api/v1/admin/users/${adminAccount.user._id.toString()}/role`)
       .set('Authorization', `Bearer ${adminSession.accessToken}`)
       .send({
         role: 'organizer'
@@ -762,5 +762,125 @@ describe('Eventiq integration coverage', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.code).toBe('ADMIN_CANNOT_DEMOTE_SELF');
+  });
+
+  // --- NEW PRODUCTION-GRADE HARDENING TESTS ---
+
+  test('SECURITY — POST /api/v1/auth/login with wrong email → 401 with message "Invalid email or password"', async () => {
+    const response = await request(httpServer)
+      .post('/api/v1/auth/login')
+      .send({
+        email: 'nonexistent-email@eventiq.test',
+        password: 'SomePassword123!'
+      });
+
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe('Invalid email or password');
+  });
+
+  test('SECURITY — POST /api/v1/auth/login with wrong password → 401 with SAME message "Invalid email or password"', async () => {
+    const attendeeAccount = await createUser({ role: 'attendee' });
+    const response = await request(httpServer)
+      .post('/api/v1/auth/login')
+      .send({
+        email: attendeeAccount.email,
+        password: 'DefinitelyWrongPassword123!'
+      });
+
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe('Invalid email or password');
+  });
+
+  test('SECURITY — POST /api/v1/bookings/initiate with client-sent amount=1 for a ₹500 event → server computes correct amount', async () => {
+    const organizerAccount = await createUser({ role: 'organizer' });
+    const attendeeAccount = await createUser({ role: 'attendee' });
+    const { event, seats } = await createOrganizerEvent({
+      organizerId: organizerAccount.user._id,
+      seatCount: 1,
+      price: 500
+    });
+    const seat = seats[0];
+    const attendeeSession = await loginUser(attendeeAccount);
+
+    await lockSeatForUser({
+      eventId: event._id.toString(),
+      seatId: seat._id.toString(),
+      userId: attendeeAccount.user._id.toString()
+    });
+
+    const response = await request(httpServer)
+      .post('/api/v1/bookings/initiate')
+      .set('Authorization', `Bearer ${attendeeSession.accessToken}`)
+      .send({
+        eventId: event._id.toString(),
+        tierId: event.ticketTiers[0]._id.toString(),
+        seatIds: [seat._id.toString()],
+        amount: 1 // Client tampered amount
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.amount).toBe(500); // Server-computed price (500 * 1)
+  });
+
+  test('PAGINATION — GET /api/v1/events?page=1&limit=5 → returns max 5 events with totalPages field', async () => {
+    const organizerAccount = await createUser({ role: 'organizer' });
+    // Create 6 events
+    for (let i = 1; i <= 6; i++) {
+      await createOrganizerEvent({
+        organizerId: organizerAccount.user._id,
+        title: `Midnight Session ${i}`,
+        seatCount: 1
+      });
+    }
+
+    const response = await request(httpServer)
+      .get('/api/v1/events?page=1&limit=5');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.events.length).toBeLessThanOrEqual(5);
+    expect(response.body.data.totalPages).toBe(2); // 6 events total / limit 5 = 2 pages
+    expect(response.body.data.total).toBe(6);
+  });
+
+  test('SOCKETS — Socket.io connection without JWT → connection rejected with Unauthorized error', async () => {
+    const socket = createSocketClient(baseUrl, {
+      auth: { token: '' }, // No token
+      transports: ['websocket']
+    });
+
+    activeSockets.add(socket);
+
+    await expect(
+      new Promise((resolve, reject) => {
+        socket.once('connect', () => {
+          resolve('connected');
+        });
+
+        socket.once('connect_error', (error) => {
+          reject(error);
+        });
+      })
+    ).rejects.toThrow('Unauthorized');
+  });
+
+  test('VALIDATION — Any route with missing required field → 400 with errors array containing field name', async () => {
+    const response = await request(httpServer)
+      .post('/api/v1/auth/register')
+      .send({
+        email: 'incomplete@eventiq.test',
+        password: 'Password123!'
+        // missing 'name'
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Validation failed');
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'name',
+          message: expect.any(String)
+        })
+      ])
+    );
   });
 });

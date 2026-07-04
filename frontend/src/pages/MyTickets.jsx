@@ -90,7 +90,7 @@ export default function MyTickets() {
 
     const loadBookings = async () => {
       try {
-        const { data } = await api.get('/booking/my');
+        const { data } = await api.get('/api/v1/bookings/my');
 
         if (isMounted) {
           setBookings(data?.data?.bookings || []);

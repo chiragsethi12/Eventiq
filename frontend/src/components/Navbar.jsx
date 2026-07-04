@@ -24,7 +24,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await api.post('/auth/logout');
+      await api.post('/api/v1/auth/logout');
     } catch (_error) {
       // Even if the server-side revoke fails, the client should exit the session.
     } finally {

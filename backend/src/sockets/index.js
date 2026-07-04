@@ -61,7 +61,7 @@ const authenticateSocket = (socket, next) => {
   } catch (err) {
     logger.warn({ err, module: 'sockets', socketId: socket.id }, 'Rejected unauthenticated socket');
 
-    const authError = new Error('Authentication required');
+    const authError = new Error('Unauthorized');
     authError.data = { code: 'AUTH_INVALID_TOKEN' };
     next(authError);
   }

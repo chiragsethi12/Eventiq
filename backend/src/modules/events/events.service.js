@@ -314,7 +314,7 @@ const normalizeLimit = (value) => {
     return DEFAULT_LIMIT;
   }
 
-  if (typeof value !== 'string') {
+  if (typeof value !== 'string' && typeof value !== 'number') {
     throw new APIError(400, 'EVENT_INVALID_LIMIT', 'limit must be a number');
   }
 
@@ -584,6 +584,32 @@ export const listEvents = async (query = {}) => {
   }
 
   const limit = normalizeLimit(query.limit);
+
+  // Page-based pagination
+  if (query.page !== undefined) {
+    const page = Math.max(1, Number(query.page) || 1);
+    const skip = (page - 1) * limit;
+    const filter = buildListFilter({ ...query, cursor: undefined });
+
+    const [events, total] = await Promise.all([
+      Event.find(filter)
+        .sort({ date: 1, _id: 1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Event.countDocuments(filter)
+    ]);
+
+    return {
+      events,
+      total,
+      page,
+      limit,
+      totalPages: total === 0 ? 0 : Math.ceil(total / limit)
+    };
+  }
+
+  // Cursor-based pagination (original behavior)
   const filter = buildListFilter(query);
   const events = await Event.find(filter)
     .sort({ date: 1, _id: 1 })

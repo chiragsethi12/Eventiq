@@ -1,4 +1,5 @@
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import adminRoutes from './modules/admin/admin.routes.js';
@@ -48,7 +49,7 @@ const allowedOrigins = getAllowedOrigins();
 const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Authorization', 'Content-Type'],
+  allowedHeaders: ['Authorization', 'Content-Type', 'X-Request-ID'],
   origin(origin, callback) {
     if (!origin || allowedOrigins.has(origin)) {
       callback(null, true);
@@ -64,23 +65,25 @@ app.use(helmet());
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(requestId);
-app.post('/payments/webhook', express.raw({ type: 'application/json' }), webhookHandler);
+app.use(compression());
+app.post('/api/v1/payments/webhook', express.raw({ type: 'application/json' }), webhookHandler);
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/health', (_req, res) => {
   res.status(200).json({
+    success: true,
     status: 'ok',
     timestamp: new Date().toISOString()
   });
 });
 
-app.use('/auth', authRoutes);
-app.use('/admin', adminRoutes);
-app.use('/events', eventsRoutes);
-app.use('/booking', bookingRoutes);
-app.use('/payments', paymentsRoutes);
-app.use('/tickets', ticketsRoutes);
-app.use('/users', usersRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/events', eventsRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
+app.use('/api/v1/payments', paymentsRoutes);
+app.use('/api/v1/tickets', ticketsRoutes);
+app.use('/api/v1/users', usersRoutes);
 
 app.use((req, _res, next) => {
   next(new APIError(404, 'NOT_FOUND', `Route not found: ${req.method} ${req.originalUrl}`));

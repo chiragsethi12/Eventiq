@@ -126,7 +126,7 @@ export default function CreateEvent() {
     setCoverUploadError('');
 
     try {
-      const { data } = await api.post('/events/cover-upload', payload);
+      const { data } = await api.post('/api/v1/events/cover-upload', payload);
       const coverImageUrl = data?.data?.coverImageUrl || '';
 
       if (!coverImageUrl) {
@@ -232,7 +232,7 @@ export default function CreateEvent() {
     setSubmitError('');
 
     try {
-      await api.post('/events', {
+      await api.post('/api/v1/events', {
         title: form.title.trim(),
         description: form.description.trim(),
         category: form.category.trim(),

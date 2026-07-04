@@ -30,7 +30,7 @@ export default function OrganizerDashboard() {
 
     const loadDashboard = async () => {
       try {
-        const { data } = await api.get('/events/organizer/mine');
+        const { data } = await api.get('/api/v1/events/organizer/mine');
 
         if (isMounted) {
           setDashboard({
@@ -169,7 +169,7 @@ export default function OrganizerDashboard() {
     setLoadingBookingsFor(eventId);
 
     try {
-      const { data } = await api.get(`/events/${eventId}/bookings`);
+      const { data } = await api.get(`/api/v1/events/${eventId}/bookings`);
 
       setBookingsByEventId((current) => ({
         ...current,

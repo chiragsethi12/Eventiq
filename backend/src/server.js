@@ -75,6 +75,16 @@ process.on('uncaughtException', (err) => {
 });
 
 const startServer = async () => {
+  const jwtAccessSecret = process.env.JWT_ACCESS_SECRET?.trim();
+
+  if (!jwtAccessSecret || jwtAccessSecret.length < 32) {
+    logger.error(
+      { module: 'server' },
+      `FATAL: JWT_ACCESS_SECRET must be at least 32 characters (got ${jwtAccessSecret?.length || 0}). Refusing to start.`
+    );
+    process.exit(1);
+  }
+
   assertAuthConfig();
   await connectDb();
   await assertSeatLockIndexesSafe();

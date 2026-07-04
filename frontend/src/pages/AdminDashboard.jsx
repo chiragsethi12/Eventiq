@@ -20,8 +20,8 @@ export default function AdminDashboard() {
     const loadDashboard = async () => {
       try {
         const [statsResponse, usersResponse] = await Promise.all([
-          api.get('/admin/stats'),
-          api.get('/admin/users')
+          api.get('/api/v1/admin/stats'),
+          api.get('/api/v1/admin/users')
         ]);
 
         if (isMounted) {
@@ -65,7 +65,7 @@ export default function AdminDashboard() {
     setPendingRoleUserId(userId);
 
     try {
-      const { data } = await api.patch(`/admin/users/${userId}/role`, { role });
+      const { data } = await api.patch(`/api/v1/admin/users/${userId}/role`, { role });
       const updatedUser = data?.data?.user;
 
       setUsers((currentUsers) =>
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      await api.delete(`/admin/users/${deleteCandidate.id}`);
+      await api.delete(`/api/v1/admin/users/${deleteCandidate.id}`);
 
       setUsers((currentUsers) => currentUsers.filter((user) => user.id !== deleteCandidate.id));
       setStats((currentStats) =>

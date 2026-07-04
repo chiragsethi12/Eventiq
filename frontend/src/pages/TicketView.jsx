@@ -20,7 +20,7 @@ export default function TicketView() {
 
     const loadTicket = async () => {
       try {
-        const { data } = await api.get(`/tickets/${bookingId}`);
+        const { data } = await api.get(`/api/v1/tickets/${bookingId}`);
 
         if (isMounted) {
           setTicket(data?.data?.ticket || null);

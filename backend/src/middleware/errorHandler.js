@@ -10,6 +10,7 @@ export const errorHandler = (err, req, res, next) => {
   let statusCode = 500;
   let code = 'INTERNAL_ERROR';
   let message = 'An unexpected error occurred';
+  let errors = undefined;
 
   if (err instanceof APIError) {
     statusCode = err.statusCode;
@@ -40,14 +41,22 @@ export const errorHandler = (err, req, res, next) => {
 
   logger.error({
     err,
+    correlationId: req.correlationId,
     requestId: req.requestId,
     userId: req.user?._id?.toString?.() || req.user?.id,
     module: 'errorHandler'
   }, 'Request failed');
 
-  return res.status(statusCode).json({
+  const responseBody = {
     success: false,
     code,
-    message
-  });
+    message,
+    correlationId: req.correlationId
+  };
+
+  if (errors) {
+    responseBody.errors = errors;
+  }
+
+  return res.status(statusCode).json(responseBody);
 };

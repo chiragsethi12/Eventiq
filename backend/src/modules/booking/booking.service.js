@@ -359,12 +359,16 @@ export const initiateBooking = async ({ user, payload }) => {
   }
 };
 
-export const listMyBookings = async ({ user, status }) => {
+export const listMyBookings = async ({ user, status, page, limit }) => {
   if (!user?.id) {
     throw new APIError(401, 'AUTH_UNAUTHENTICATED', 'Authentication required');
   }
 
   const normalizedStatus = normalizeOptionalStatus(status);
+  const normalizedPage = Math.max(1, Number(page) || 1);
+  const normalizedLimit = Math.min(100, Math.max(1, Number(limit) || 20));
+  const skip = (normalizedPage - 1) * normalizedLimit;
+
   const query = {
     userId: new mongoose.Types.ObjectId(user.id)
   };
@@ -373,13 +377,24 @@ export const listMyBookings = async ({ user, status }) => {
     query.paymentStatus = normalizedStatus;
   }
 
-  const bookings = await Booking.find(query)
-    .sort({ createdAt: -1 })
-    .populate('eventId', 'title date venue coverImageUrl status')
-    .populate('seats', 'seatNumber')
-    .lean();
+  const [bookings, total] = await Promise.all([
+    Booking.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(normalizedLimit)
+      .populate('eventId', 'title date venue coverImageUrl status')
+      .populate('seats', 'seatNumber')
+      .lean(),
+    Booking.countDocuments(query)
+  ]);
 
-  return bookings.map(serializeBooking);
+  return {
+    bookings: bookings.map(serializeBooking),
+    total,
+    page: normalizedPage,
+    limit: normalizedLimit,
+    totalPages: total === 0 ? 0 : Math.ceil(total / normalizedLimit)
+  };
 };
 
 export const getBookingById = async ({ bookingId, user }) => {

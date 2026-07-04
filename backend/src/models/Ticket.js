@@ -43,12 +43,7 @@ const ticketSchema = new Schema(
       type: Date
     }
   },
-  {
-    timestamps: {
-      createdAt: true,
-      updatedAt: false
-    }
-  }
+  { timestamps: true }
 );
 
 export const Ticket = models.Ticket || model('Ticket', ticketSchema);

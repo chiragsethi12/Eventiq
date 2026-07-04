@@ -40,7 +40,7 @@ export function useBooking({ eventId, tierId, lockedSeats, eventTitle, expectedA
     setIsCheckoutLoading(true);
 
     try {
-      const response = await api.post('/booking/initiate', {
+      const response = await api.post('/api/v1/bookings/initiate', {
         eventId,
         tierId,
         seatIds: lockedSeatIds

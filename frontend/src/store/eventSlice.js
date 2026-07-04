@@ -58,7 +58,7 @@ export const fetchEvents = createAsyncThunk(
   'event/fetchEvents',
   async (filters = {}, { rejectWithValue }) => {
     try {
-      const { data } = await api.get('/events', {
+      const { data } = await api.get('/api/v1/events', {
         params: buildEventParams(filters)
       });
 
@@ -79,7 +79,7 @@ export const fetchEventById = createAsyncThunk(
   'event/fetchEventById',
   async (id, { rejectWithValue }) => {
     try {
-      const { data } = await api.get(`/events/${id}`);
+      const { data } = await api.get(`/api/v1/events/${id}`);
       return data?.data?.event || null;
     } catch (error) {
       return rejectWithValue(

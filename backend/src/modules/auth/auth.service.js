@@ -224,7 +224,7 @@ const buildAuthResult = (user) => ({
 const createPasswordHash = async (password) => bcrypt.hash(password, getBcryptSaltRounds());
 
 const throwInvalidCredentials = () => {
-  throw new APIError(401, 'AUTH_INVALID_CREDENTIALS', 'Invalid credentials');
+  throw new APIError(401, 'AUTH_INVALID_CREDENTIALS', 'Invalid email or password');
 };
 
 const isDuplicateKeyError = (err) => err?.code === duplicateKeyCode;
@@ -396,7 +396,7 @@ export const getRefreshTokenCookieOptions = () => ({
   httpOnly: true,
   secure: isProduction,
   sameSite: isProduction ? 'strict' : 'lax',
-  path: '/auth',
+  path: '/api/v1/auth',
   maxAge: REFRESH_TOKEN_SECONDS * 1000
 });
 
@@ -404,7 +404,7 @@ export const getClearRefreshTokenCookieOptions = () => ({
   httpOnly: true,
   secure: isProduction,
   sameSite: isProduction ? 'strict' : 'lax',
-  path: '/auth'
+  path: '/api/v1/auth'
 });
 
 export const authService = {
