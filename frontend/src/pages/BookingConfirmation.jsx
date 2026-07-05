@@ -65,6 +65,8 @@ export default function BookingConfirmation() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isPollingStatus, setIsPollingStatus] = useState(false);
+  const [resendStatus, setResendStatus] = useState('idle');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const bookingId = useMemo(() => {
     if (routeBookingId) {
       return routeBookingId;
@@ -164,6 +166,35 @@ export default function BookingConfirmation() {
     };
   }, [bookingId]);
 
+  const handleResendEmail = async () => {
+    if (resendCooldown > 0 || resendStatus === 'sending' || !booking?.id) {
+      return;
+    }
+
+    setResendStatus('sending');
+
+    try {
+      await api.post(`/api/v1/bookings/${booking.id}/resend-email`);
+      setResendStatus('sent');
+      setResendCooldown(60);
+
+      const interval = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setResendStatus('idle');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (resendErr) {
+      const errMsg = resendErr.response?.data?.message || 'Failed to resend';
+      setResendStatus(errMsg.includes('Too many') ? 'rate_limited' : 'error');
+      setTimeout(() => setResendStatus('idle'), 5000);
+    }
+  };
+
   if (isLoading) {
     return <LoadingState />;
   }
@@ -221,6 +252,39 @@ export default function BookingConfirmation() {
           </span>
         </div>
       </section>
+
+      {isConfirmed ? (
+        <section className="flex items-center gap-4 rounded-[26px] border border-emerald-400/20 bg-emerald-500/10 p-5 backdrop-blur-xl">
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-lg">
+            📧
+          </span>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-emerald-100">
+              Check your email for your ticket
+            </p>
+            <p className="mt-0.5 text-xs text-emerald-200/70">
+              A confirmation email with your PDF ticket and QR code is on its way.
+            </p>
+          </div>
+          <button
+            id="resend-email-btn"
+            type="button"
+            onClick={handleResendEmail}
+            disabled={resendCooldown > 0 || resendStatus === 'sending'}
+            className="flex-shrink-0 rounded-full border border-emerald-300/25 bg-emerald-500/15 px-4 py-2 text-xs font-semibold text-emerald-100 transition-all hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {resendStatus === 'sending'
+              ? 'Sending…'
+              : resendStatus === 'sent'
+                ? `Sent! (${resendCooldown}s)`
+                : resendStatus === 'rate_limited'
+                  ? 'Try again later'
+                  : resendStatus === 'error'
+                    ? 'Failed — retry'
+                    : 'Resend email'}
+          </button>
+        </section>
+      ) : null}
 
       <section className="grid gap-5 rounded-[32px] border border-white/10 bg-white/[0.04] p-6 shadow-[0_24px_80px_rgba(2,6,23,0.28)] backdrop-blur-xl sm:grid-cols-2 sm:p-8">
         <article className="rounded-[26px] border border-white/10 bg-slate-950/55 p-5">

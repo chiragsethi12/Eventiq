@@ -15,6 +15,13 @@ const bookingInitiateRateLimiter = createRateLimiter({
   getKey: (req) => req.user?.id
 });
 
+const resendEmailRateLimiter = createRateLimiter({
+  keyPrefix: 'rate:resend-email',
+  max: 1,
+  windowSeconds: 60,
+  getKey: (req) => req.user?.id
+});
+
 router.post(
   '/initiate',
   authenticate,
@@ -25,5 +32,13 @@ router.post(
 );
 router.get('/my', authenticate, validateQuery(listBookingsQuerySchema), bookingController.listMyBookingsHandler);
 router.get('/:id', authenticate, bookingController.getBookingByIdHandler);
+router.post(
+  '/:id/resend-email',
+  authenticate,
+  authorize('attendee'),
+  resendEmailRateLimiter,
+  bookingController.resendEmailHandler
+);
 
 export default router;
+

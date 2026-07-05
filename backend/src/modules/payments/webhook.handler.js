@@ -3,7 +3,9 @@ import mongoose from 'mongoose';
 import Booking from '../../models/Booking.js';
 import Event from '../../models/Event.js';
 import Seat from '../../models/Seat.js';
+import User from '../../models/User.js';
 import { redis } from '../../config/redis.js';
+import { emailQueue } from '../../config/queue.js';
 import { logger } from '../../utils/logger.js';
 import { io } from '../../sockets/index.js';
 import { eventRoom, seatLockKey, userLocksKey } from '../booking/seat-lock.service.js';
@@ -177,7 +179,17 @@ const handlePaymentCaptured = async ({ orderId, paymentId, payload }) => {
     return { status: 200, body: { message: 'Booking not found' } };
   }
 
+  // Idempotency: if booking already confirmed with this paymentId, skip
   const wasAlreadyConfirmed = booking.paymentStatus === 'confirmed';
+
+  if (wasAlreadyConfirmed && booking.razorpayPaymentId === paymentId) {
+    logger.info(
+      { module: 'payments', orderId, bookingId: booking._id.toString() },
+      'Duplicate webhook — booking already confirmed with same paymentId'
+    );
+    return { status: 200, body: { message: 'Already processed' } };
+  }
+
   booking.razorpayPaymentId = paymentId;
 
   if (!wasAlreadyConfirmed) {
@@ -218,6 +230,38 @@ const handlePaymentCaptured = async ({ orderId, paymentId, payload }) => {
       bookingId: booking._id.toString(),
       ticketId: ticket._id.toString()
     });
+  }
+
+  // Enqueue email job — snapshot user email at enqueue time
+  if (!wasAlreadyConfirmed) {
+    try {
+      const user = await User.findById(booking.userId).select('email name').lean();
+      const job = await emailQueue.add(
+        'booking-confirmation',
+        {
+          bookingId: booking._id.toString(),
+          userId: booking.userId.toString(),
+          eventId: booking.eventId.toString(),
+          userEmail: user?.email || null,
+          userName: user?.name || null
+        },
+        { jobId: `email-${booking._id.toString()}` }
+      );
+
+      booking.jobId = job.id;
+      await booking.save();
+
+      logger.info(
+        { module: 'payments', bookingId: booking._id.toString(), jobId: job.id },
+        'Enqueued email job'
+      );
+    } catch (enqueueErr) {
+      // Email enqueue failure must NOT block the 200 response
+      logger.error(
+        { err: enqueueErr, module: 'payments', bookingId: booking._id.toString() },
+        'Failed to enqueue email job — booking is still confirmed'
+      );
+    }
   }
 
   return { status: 200, body: { message: 'Processed' } };

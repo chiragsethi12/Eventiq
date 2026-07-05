@@ -422,8 +422,55 @@ export const getBookingById = async ({ bookingId, user }) => {
   return serializeBooking(booking);
 };
 
+export const resendBookingEmail = async ({ bookingId, user }) => {
+  if (!user?.id) {
+    throw new APIError(401, 'AUTH_UNAUTHENTICATED', 'Authentication required');
+  }
+
+  const _id = requireObjectId(bookingId, 'BOOKING_INVALID_ID', 'Invalid booking id');
+  const booking = await Booking.findById(_id);
+
+  if (!booking) {
+    throw new APIError(404, 'BOOKING_NOT_FOUND', 'Booking not found');
+  }
+
+  if (booking.userId.toString() !== user.id) {
+    throw new APIError(403, 'AUTH_FORBIDDEN', 'Forbidden');
+  }
+
+  if (booking.paymentStatus !== 'confirmed') {
+    throw new APIError(400, 'BOOKING_NOT_CONFIRMED', 'Booking is not confirmed');
+  }
+
+  const { emailQueue } = await import('../../config/queue.js');
+  const User = (await import('../../models/User.js')).default;
+  const userDoc = await User.findById(booking.userId).select('email name').lean();
+
+  if (!userDoc?.email) {
+    throw new APIError(400, 'USER_NO_EMAIL', 'No email address on file');
+  }
+
+  const job = await emailQueue.add(
+    'booking-confirmation-resend',
+    {
+      bookingId: booking._id.toString(),
+      userId: booking.userId.toString(),
+      eventId: booking.eventId.toString(),
+      userEmail: userDoc.email,
+      userName: userDoc.name || null
+    },
+    { jobId: `email-resend-${booking._id.toString()}-${Date.now()}` }
+  );
+
+  return {
+    message: 'Confirmation email has been re-queued',
+    jobId: job.id
+  };
+};
+
 export const bookingService = {
   getBookingById,
   initiateBooking,
-  listMyBookings
+  listMyBookings,
+  resendBookingEmail
 };

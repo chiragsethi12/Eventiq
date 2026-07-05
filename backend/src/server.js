@@ -3,10 +3,12 @@ import { createServer } from 'node:http';
 import app from './app.js';
 import { connectDb, disconnectDb } from './config/db.js';
 import { connectRedis, disconnectRedis } from './config/redis.js';
+import { closeQueues } from './config/queue.js';
 import { logger } from './utils/logger.js';
 import { closeSockets, initializeSockets } from './sockets/index.js';
 import { assertAuthConfig, seedAdminUser } from './modules/auth/auth.service.js';
 import { assertSeatLockIndexesSafe } from './modules/booking/seat-lock.service.js';
+import { startWorkers, closeWorkers } from './workers/startWorkers.js';
 
 const port = process.env.PORT || 5000;
 const httpServer = createServer(app);
@@ -45,6 +47,8 @@ const shutdown = async (signalOrReason, err) => {
 
   try {
     await closeSockets();
+    await closeWorkers();
+    await closeQueues();
     await closeHttpServer();
     await disconnectRedis();
     await disconnectDb();
@@ -90,6 +94,7 @@ const startServer = async () => {
   await assertSeatLockIndexesSafe();
   await connectRedis();
   await seedAdminUser();
+  await startWorkers();
   initializeSockets(httpServer);
 
   httpServer.listen(port, () => {

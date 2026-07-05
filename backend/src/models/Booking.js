@@ -54,6 +54,15 @@ const bookingSchema = new Schema(
     ticketId: {
       type: Schema.Types.ObjectId,
       ref: 'Ticket'
+    },
+    emailSentAt: {
+      type: Date
+    },
+    emailError: {
+      type: String
+    },
+    jobId: {
+      type: String
     }
   },
   { timestamps: true }

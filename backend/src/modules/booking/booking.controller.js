@@ -1,4 +1,4 @@
-import { getBookingById, initiateBooking, listMyBookings } from './booking.service.js';
+import { getBookingById, initiateBooking, listMyBookings, resendBookingEmail } from './booking.service.js';
 
 const asyncHandler = (handler) => (req, res, next) => {
   Promise.resolve(handler(req, res, next)).catch(next);
@@ -42,8 +42,22 @@ export const getBookingByIdHandler = asyncHandler(async (req, res) => {
   });
 });
 
+export const resendEmailHandler = asyncHandler(async (req, res) => {
+  const result = await resendBookingEmail({
+    bookingId: req.params.id,
+    user: req.user
+  });
+
+  return res.status(200).json({
+    success: true,
+    data: result
+  });
+});
+
 export const bookingController = {
   getBookingByIdHandler,
   initiateBookingHandler,
-  listMyBookingsHandler
+  listMyBookingsHandler,
+  resendEmailHandler
 };
+
